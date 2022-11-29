@@ -1,4 +1,9 @@
-# from youtube https://www.youtube.com/watch?v=x5FHbr0Em5A
+#purpose is to get the complete log transaction of zmt on etherscan
+#limitation
+#1-using free api which limit 1000 row
+#2-having list index error
+#3-need to enhance for ZMT interaction on gate.io, swap... eg 0xe93f62dad69daa69dae312e649b7e5ae6e9aeda917f100798f07f889acc8a604
+#ref from youtube https://www.youtube.com/watch?v=x5FHbr0Em5A
 
 from requests import get
 import pprint
