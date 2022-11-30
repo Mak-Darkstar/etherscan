@@ -1,10 +1,16 @@
 #purpose is to get the complete log transaction of zmt on etherscan
+#
 #limitation
-#1-using free api which limit 1000 row
-#2-having list index error
-#3-need to enhance for ZMT interaction on gate.io, swap... eg 0xe93f62dad69daa69dae312e649b7e5ae6e9aeda917f100798f07f889acc8a604
-#4-need to remove this from report for approval step eg 0x917fdbccb410f5825bbe1eca347036a247cae20ad25713ab5d4cf6c18f1e00b6
+##1-using free api which limit 1000 row
+##2-having list index error
+##3-need to enhance for ZMT interaction on gate.io, swap... eg 0xe93f62dad69daa69dae312e649b7e5ae6e9aeda917f100798f07f889acc8a604
+##4-need to remove this from report for approval step eg 0x917fdbccb410f5825bbe1eca347036a247cae20ad25713ab5d4cf6c18f1e00b6
+#
 #ref from youtube https://www.youtube.com/watch?v=x5FHbr0Em5A
+#
+#note: 
+##for transaction use topic = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+##for approval transacting on other platform use topic = 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
 
 from requests import get
 import pprint
