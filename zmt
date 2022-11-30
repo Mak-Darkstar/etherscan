@@ -3,6 +3,7 @@
 #1-using free api which limit 1000 row
 #2-having list index error
 #3-need to enhance for ZMT interaction on gate.io, swap... eg 0xe93f62dad69daa69dae312e649b7e5ae6e9aeda917f100798f07f889acc8a604
+#4-need to remove this from report for approval step eg 0x917fdbccb410f5825bbe1eca347036a247cae20ad25713ab5d4cf6c18f1e00b6
 #ref from youtube https://www.youtube.com/watch?v=x5FHbr0Em5A
 
 from requests import get
