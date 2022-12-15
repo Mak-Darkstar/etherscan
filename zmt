@@ -12,41 +12,57 @@
 ##for transaction use topic = 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 ##for approval transacting on other platform use topic = 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
 
+# from youtube https://www.youtube.com/watch?v=x5FHbr0Em5A
+
 from requests import get
 import pprint
 from datetime import datetime
 import pandas as pd
 import json
-pd.io.json._json.loads = lambda s, *a, **kw: json.loads(s)
+import math
+# pd.io.json._json.loads = lambda s, *a, **kw: json.loads(s)
+import psycopg2
+from minh_cre import secrets
 
-API_KEY = "ENTERyourKEY"
+API_KEY = secrets.get('ether_api')
 zmt_address = "0xaa602dE53347579f86b996D2Add74bb6F79462b2"
 BASE_URL = "https://api.etherscan.io/api"
-ETHER_VALUE = 10**18
+ETHER_VALUE = 10 ** 18
 
-# INPUT BLOCK VALUE HERE
-depart_block = 15937869
-arrival_block = 16072573
+connect = psycopg2.connect(
+    host=secrets.get('host'),
+    database=secrets.get('database'),
+    user=secrets.get('user'),
+    password=secrets.get('password'),
+    port=secrets.get('port')
+)
+
+print('---filling latest block into depart block------------')
+INIT_FACTOR = 1000000
+DATA_LIMIT = 950
+#
+# arrival_block = latest_block() + INIT_FACTOR
 
 def make_api_url(module, action, address, fromBlock, toBlock, **kwargs):
     url = BASE_URL + f"?module={module}&action={action}&address={address}&fromBlock={fromBlock}&toBlock={toBlock}&apikey={API_KEY}"
 
     for key, value in kwargs.items():
-        url +=f"&{key}={value}"
+        url += f"&{key}={value}"
 
     return url
 
-# print (make_api_url ("logs", "getLogs", address=zmt_address, fromBlock= depart_block, toBlock=arrival_block))
-
 from ast import literal_eval
-#
-def get_logs():
-    get_log_url = make_api_url ("logs", "getLogs", address=zmt_address, fromBlock= depart_block, toBlock=arrival_block)
+
+
+def get_logs(depart_block, INIT_FACTOR):
+    arrival_block = depart_block + INIT_FACTOR
+    get_log_url = make_api_url("logs", "getLogs", address=zmt_address, fromBlock=depart_block, toBlock=arrival_block)
     response = get(get_log_url)
     data = response.json()["result"]
 
     created_at = []
     zmt_k_address = []
+    length = []
     topic = []
     from_address = []
     to_address = []
@@ -54,47 +70,79 @@ def get_logs():
     transactionHash = []
     blockNumber = []
 
-    get_log_dict = {'created_at':created_at,'zmt_k_address':zmt_k_address,'topic':topic, 'from_address':from_address,'to_address':to_address,'zmt_amount':zmt_amt
-                    ,'transactionHash':transactionHash,'blockNumber':blockNumber}
+    get_log_dict = {'created_at': created_at
+        , 'zmt_k_address': zmt_k_address
+        , 'topic': topic
+        , 'length': length
+        , 'from_address': from_address
+        , 'to_address': to_address
+        , 'zmt_amount': zmt_amt
+        , 'transactionHash': transactionHash
+        , 'blockNumber': blockNumber
+                    }
 
     for lg in data:
-        created_a = datetime.utcfromtimestamp(int(lg["timeStamp"],16))
+        created_a = datetime.utcfromtimestamp(int(lg["timeStamp"], 16))
         # time= datetime.fromtimestamp(lg['timeStamp'])
         zmt_k_a = lg["address"]
         topi = lg["topics"][0]
-        from_add = lg["topics"][1]
-        to_add = lg["topics"][2]
+        l1 = len(lg["topics"][0])
+
+        if lg["topics"][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+            from_add = lg["topics"][1]
+            to_add = lg["topics"][2]
+        else:
+            from_add = '09999999999999999999999999999999999999999999999999999999996699999f'
+            to_add = '09999999999999999999999999999999999999999999999999999999996699999f'
+
         if lg["data"] == '0x':
             zmt_a = 0.000000000000000001
         else:
             zmt_a = literal_eval(lg["data"]) / ETHER_VALUE
-        transactionH=lg["transactionHash"]
-        blockN= lg["blockNumber"]
+        transactionH = lg["transactionHash"]
+        blockN = lg["blockNumber"]
 
         created_at.append(created_a)
         zmt_k_address.append(zmt_k_a)
         topic.append(topi)
+        length.append(l1)
         from_address.append(from_add)
         to_address.append(to_add)
         zmt_amt.append(zmt_a)
         transactionHash.append(transactionH)
         blockNumber.append(blockN)
 
-    y=json.dumps(get_log_dict, indent=4, sort_keys=False, default=str)
+    y = json.dumps(get_log_dict, indent=4, sort_keys=False, default=str)
+
     return y
 
-# convert to pandas
-logs_df = pd.read_json(get_logs())
+def get_etherscan_api_logs(**kwargs):
+    def latest_block():
+        conn = connect
+        cur = conn.cursor()
+        cur.execute('select max("blockNumber"::dec(65,0))from warehouse.mappings.zmt_etherscan')
+        max_block = cur.fetchone()[0]
 
-# print(type(logs_df.data))
+        return max_block
 
-# NEED to add a condition when address length <>40
-logs_df['length_from_address'] = logs_df['from_address'].str.len()
-logs_df['length_to_address'] = logs_df['to_address'].str.len()
-logs_df['from_address_use'] = '0x'+ logs_df['from_address'].str[-40:].astype(str)
-logs_df['to_address_use'] = '0x' + logs_df['to_address'].str[-40:].astype(str)
-logs_df['blockNumber'] = logs_df['blockNumber'].apply(int, base = 16)
+    max_block = latest_block()
+    api_data = get_logs(max_block, INIT_FACTOR)
 
-# print(logs_df.blockNumber)
+    while (len(json.loads(api_data)['created_at']) > DATA_LIMIT):
+            factor = math.floor(INIT_FACTOR * 0.5)
+            print ('block incremental reduced from= ' + str(INIT_FACTOR), 'to= ' + str(factor))
+            api_data = get_logs(max_block, factor)
+            print('new data length= ' +str(len(json.loads(get_logs(factor))['created_at'])))
 
-logs_df.to_csv('log_df_9.csv')
+    logs_df = pd.read_json(api_data)
+
+    print('---individual column formatting in pandas-------------')
+    logs_df['length_from_address'] = logs_df['from_address'].str.len()
+    logs_df['length_to_address'] = logs_df['to_address'].str.len()
+    logs_df['from_address_use'] = '0x' + logs_df['from_address'].str[-40:].astype(str)
+    logs_df['to_address_use'] = '0x' + logs_df['to_address'].str[-40:].astype(str)
+    logs_df['blockNumber'] = logs_df['blockNumber'].apply(int, base=16)
+    logs_df.drop(['length'], inplace=True, axis=1)
+    return logs_df
+
+print(get_etherscan_api_logs())
