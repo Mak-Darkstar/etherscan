@@ -69,6 +69,8 @@ def get_logs(depart_block, INIT_FACTOR):
     zmt_amt = []
     transactionHash = []
     blockNumber = []
+    logIndex = []
+    transactionIndex =[]
 
     get_log_dict = {'created_at': created_at
         , 'zmt_k_address': zmt_k_address
@@ -79,6 +81,8 @@ def get_logs(depart_block, INIT_FACTOR):
         , 'zmt_amount': zmt_amt
         , 'transactionHash': transactionHash
         , 'blockNumber': blockNumber
+        , 'logIndex': logIndex
+        , 'transactionIndex': transactionIndex
                     }
 
     for lg in data:
@@ -101,6 +105,8 @@ def get_logs(depart_block, INIT_FACTOR):
             zmt_a = literal_eval(lg["data"]) / ETHER_VALUE
         transactionH = lg["transactionHash"]
         blockN = lg["blockNumber"]
+        logind = lg["logIndex"]
+        transactionInd = lg["transactionIndex"]
 
         created_at.append(created_a)
         zmt_k_address.append(zmt_k_a)
@@ -111,6 +117,8 @@ def get_logs(depart_block, INIT_FACTOR):
         zmt_amt.append(zmt_a)
         transactionHash.append(transactionH)
         blockNumber.append(blockN)
+        logIndex.append(logind)
+        transactionIndex.append(transactionInd)
 
     y = json.dumps(get_log_dict, indent=4, sort_keys=False, default=str)
 
