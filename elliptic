@@ -1,0 +1,163 @@
+import requests, pprint, json
+from datetime import datetime
+import csv, pandas as pd
+import psycopg2
+# from sqlalchemy import create_engine
+from minh_cre import secrets
+import re
+import time
+import base64, hmac as crypto, hashlib
+
+conn = psycopg2.connect(
+    host= secrets.get('host'),
+    database=secrets.get('database'),
+    user=secrets.get('user'),
+    password=secrets.get('password'),
+    port= secrets.get('port')
+    )
+
+# alchemyEngine   = create_engine('postgresql+psycopg2://test:@127.0.0.1', pool_recycle=3600)
+
+def withdraw(start_date,end_date ):
+    query_string = f"""
+        WITH withdraw_tickets_list AS
+            (SELECT w.withdraw_ticket_id                                             as ticket_id,
+                    tick_to_timestamp(w.created_on_ticks)                            as created_at,
+                    wts.name                                                         as status,
+                    COALESCE(template_form::jsonb ->> 'ExternalAddress'
+                        , template_form::jsonb ->> 'transfer_address'
+                        , withdraw_transaction_details::jsonb ->> 'ExternalAddress') as external_address,
+                    withdraw_transaction_details::jsonb ->> 'TxId'                   as tx_id,
+                    lower(substring(template_form_type from 'ToExternal(.*)Address')) as chain,
+                    template_form_type,
+                    w.account_id                                                     as ap_account_id,
+                    u.signup_hostcountry,
+                    p.symbol                                                         as product_symbol,
+                    pt.type_name                                                     as product_type,
+                    cast(w.amount as numeric(60, 8))                                as qty,
+                    round(cast(w.amount as numeric(60, 30)) * r.price,3)                     as amount_usd
+            FROM apex.withdraw_tickets w
+                LEFT JOIN oms_data_public.withdraw_tickets_status wts
+                    ON w.status = wts.number
+                LEFT JOIN apex.products p
+                    ON w.asset_id = p.product_id
+                LEFT JOIN oms_data_public.products_types pt
+                    ON p.type = pt.id
+                LEFT JOIN analytics.users_info u
+                    ON w.account_id = u.ap_account_id
+                LEFT JOIN analytics.rates_master r
+                    ON r.product_1_symbol = p.symbol
+                    AND DATE_TRUNC('day', tick_to_timestamp(w.created_on_ticks)) = r.created_at
+            Where asset_name = 'Bitcoin'
+            --and w.account_id in (206444 ,689623,151468)
+            --and w.account_id = 46641
+            --and request_code in ( '6b79822b-2b37-4c79-a70c-f34eda1d48ba','43fffef2-ac10-421c-9ece-5107f3f06edc'
+            --,'3c68bb78-3706-4822-a285-d272e893f049','556f1e8a-e20d-49b7-9d4d-8603227618f5','b6bcecf2-6c2a-427d-9928-20200c0d4ecb')
+            )
+            SELECT ap_account_id
+                ,external_address
+                ,chain
+                ,product_symbol
+                ,tx_id::varchar(255)
+                ,SUM(amount_usd) as amount_usd
+            FROM withdraw_tickets_list
+            WHERE created_at::date >= '{start_date}'
+            and created_at::date <= '{end_date}'
+            and status = 'FullyProcessed'
+            and product_type = 'CryptoCurrency'
+            and external_address IS NOT NULL
+            GROUP BY 1,2,3,4,5
+            ORDER BY 6 DESC
+        """
+    wd = pd.read_sql(query_string, conn)
+    return wd
+
+wd = withdraw('2022-12-01','2022-12-31')
+
+request_body = [] #payload
+wd_json = json.loads(wd.to_json(orient='records')) #wd[:7] ---> this work like limit 7 line of data
+
+for row in wd_json:
+    address_dict = {
+    "subject": {
+        "type": "transaction",
+        "output_type": "address",
+        "asset": row['product_symbol'],             #zm product_symbol
+        "blockchain": row['chain'],                 #zm chain
+        "output_address": row['external_address'],  #zm external_address
+        "hash": row['tx_id']                         #zm tx_id
+        },
+    "type": "destination_of_funds",
+    "customer_reference": str(row['ap_account_id'])
+    }
+    request_body.append(address_dict)
+
+key= secrets.get('key')
+secret= secrets.get('secret')
+time_of_request = str(int(round(time.time() * 1000)))
+http_method = "POST"
+base_url = "https://aml-api.elliptic.co"
+http_path = "/v2/analyses/synchronous"
+
+#
+a = 0
+lst = []
+
+for x in request_body:
+    payload = request_body[a]
+
+    def get_signature(secret, time_of_request, http_method, http_path, payload):
+        hmac = crypto.new(base64.b64decode(secret), digestmod=hashlib.sha256)
+        request_text = time_of_request + http_method + http_path.lower() + payload
+        hmac.update(request_text.encode('UTF-8'))
+        return base64.b64encode(hmac.digest()).decode('utf-8')
+
+    headers = {
+        "x-access-key": key,
+        "x-access-sign": get_signature(secret, time_of_request, http_method, http_path,
+                                       json.dumps(payload, separators=(',', ':'))),
+        "x-access-timestamp": time_of_request,
+        "content-type": "application/json"
+    }
+
+    response = requests.post(base_url + http_path, json=payload, headers=headers)
+    # print(response.json())
+    load_js = json.loads(json.dumps(response.json()))
+    #logs_js = json.dumps(response.json(), indent=4, sort_keys=False, default=str)
+    #load_js = json.loads(logs_js)
+    lst.append(load_js)
+    a += 1
+
+#main data
+main_df = pd.DataFrame(lst)
+json_struct = json.loads(main_df.to_json(orient="records"))
+df_flat = pd.json_normalize(json_struct)
+
+##############################
+# working on contribution column
+custom_field_contri = pd.json_normalize(df_flat['contributions'])
+
+# naming the column that flattened
+prefix = "contri"
+new_columns = [f"{prefix}_{i}" for i in range(len(list(custom_field_contri.columns)) )]
+custom_field_contri.columns = new_columns
+
+merged_df_contri = main_df.merge(custom_field_contri, left_index=True, right_index=True)
+
+# do this because when export to csv, column with super long string will drop to +2 rows
+merged_df_contri_drop = merged_df_contri.drop(['evaluation_detail','contributions'], axis=1)
+
+merged_df_contri_drop.to_csv('merged_df_contri_drop.csv')
+
+##############################
+# working on evaluation column
+custom_field_eval = pd.json_normalize(df_flat['evaluation_detail'])
+
+prefix = "eval"
+new_columns = [f"{prefix}_{i}" for i in range(len(list(custom_field_eval.columns)) )]
+custom_field_eval.columns = new_columns
+
+merged_df_eval = main_df.merge(custom_field_eval, left_index=True, right_index=True)
+merged_df_eval_drop = merged_df_eval.drop(['evaluation_detail','contributions'], axis=1)
+
+merged_df_eval_drop.to_csv('merged_df_eval_drop.csv')
