@@ -1,0 +1,261 @@
+from airflow import DAG
+from airflow.models import Variable
+from airflow.operators.dummy_operator import DummyOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.operators.python import PythonOperator
+from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+from airflow.hooks.base_hook import BaseHook
+from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.hooks.postgres_hook import PostgresHook
+from datetime import datetime, timedelta
+from requests import get
+import sqlalchemy
+import pandas as pd
+import requests
+import json
+import re
+from sqlalchemy import create_engine
+from ast import literal_eval
+
+
+CONF_VARIABLE = 'bscscan_get_logs'
+CONF = Variable.get(CONF_VARIABLE, deserialize_json = True)
+SLACK_CONN_ID = CONF['slack_conn_id']
+PG_CONN_ID =  CONF['pg_conn_id']
+DAGNAME = CONF['dagname']
+START_DATE = CONF['start_date']
+API_KEY = Variable.get('bscscan_get_logs_api_key')
+SLACK_BASE_URL="https://hooks.slack.com/services"
+
+PG_SCHEMA = 'data_team_staging'
+PG_TABLE_NAME ='zmt_bscscan'
+
+INIT_FACTOR = 400000
+DATA_LIMIT = 950
+zmt_address = "0xDE960267B9AabFb5404D9A566C1ED6DB9dB09522" #"0xaa602dE53347579f86b996D2Add74bb6F79462b2"
+BASE_URL = "https://api.bscscan.com/api"
+ETHER_VALUE = 10 ** 18
+
+def send_slack_notify(context, slack_msg):
+   slack_webhook_token = BaseHook.get_connection(SLACK_CONN_ID).password
+   slack_webhook_url = f"{SLACK_BASE_URL}{slack_webhook_token}"
+   slack_data = {"text": slack_msg}
+   alert_call = SlackWebhookOperator(
+      task_id='slack_test',
+      http_conn_id=SLACK_CONN_ID,
+      webhook_token=slack_webhook_token,
+      message=slack_msg,
+      username='airflow'
+   )
+   return alert_call.execute(context=context)
+
+
+def get_slack_msg(is_success):
+   if is_success:      
+      slack_msg = """
+         :large_green_circle: Job Success. 
+         *Dag*: {dag} 
+         *Execution Time*: {exec_date}  
+         """
+   else:
+      slack_msg = """
+         :red_circle: Task Failed. 
+         *Task*: {task}  
+         *Dag*: {dag} 
+         *Execution Time*: {exec_date}  
+         *Log Url*: {log_url} 
+         """
+   return slack_msg
+
+def call_success_func(context):
+   msg = get_slack_msg(True).format(
+      dag=context.get('task_instance').dag_id, 
+      exec_date=context.get('execution_date')
+   )
+   send_slack_notify(context, msg)
+
+def call_failure_func(context):
+   msg = get_slack_msg(False).format(
+      task=context.get('task_instance').task_id,
+      dag=context.get('task_instance').dag_id,
+      ti=context.get('task_instance'),
+      exec_date=context.get('execution_date'),
+      log_url=context.get('task_instance').log_url
+   )
+   send_slack_notify(context, msg)
+
+
+default_args = {
+  'on_failure_callback': call_failure_func,
+  'owner': 'minh',
+  'depends_on_past': False,
+  'start_date': datetime.strptime(START_DATE, '%Y-%m-%d'),
+  'email': ['minh@zipmex.com'],
+  'email_on_failure': False,
+  'email_on_retry': False,
+  'retries': 1,
+  'retry_delay': timedelta(minutes=5),
+  'wait_for_downstream': False
+}
+
+dag = DAG(DAGNAME, 
+            default_args=default_args,
+            max_active_runs = 1,
+            catchup=False,
+            schedule_interval='30 00 * * *')
+
+start = DummyOperator(task_id='start', dag=dag)
+finish = DummyOperator(task_id='finish', dag=dag)
+# finish = DummyOperator(task_id='finish', dag=dag, on_success_callback=call_success_func)
+
+def append_data(df):
+    pg_conn = BaseHook.get_connection(PG_CONN_ID) 
+    conn_string = f"postgresql+psycopg2://{pg_conn.login}:{pg_conn.password}@{pg_conn.host}:{pg_conn.port}/{pg_conn.schema}"
+    engine = create_engine(conn_string)
+    df.to_sql(name=PG_TABLE_NAME, con=engine, schema=PG_SCHEMA, if_exists='append', index=False)
+
+def make_api_url(module, action, address, fromBlock, toBlock, **kwargs):
+    url = BASE_URL + f"?module={module}&action={action}&address={address}&fromBlock={fromBlock}&toBlock={toBlock}&apikey={API_KEY}"
+    for key, value in kwargs.items():
+        url += f"&{key}={value}"
+    return url
+
+def get_logs(depart_block, INIT_FACTOR):
+    arrival_block = depart_block + INIT_FACTOR
+    get_log_url = make_api_url("logs", "getLogs", address=zmt_address, fromBlock=depart_block, toBlock=arrival_block)
+    response = get(get_log_url)
+    data = response.json()["result"]
+
+    created_at = []
+    zmt_k_address = []
+    length = []
+    topic = []
+    from_address = []
+    to_address = []
+    zmt_amt = []
+    transactionhash = []
+    blocknumber = []
+    logindex = []
+    transactionindex =[]
+
+    get_log_dict = {'created_at': created_at
+        ,'zmt_k_address': zmt_k_address
+        ,'topic': topic
+        ,'length': length
+        ,'from_address': from_address
+        ,'to_address': to_address
+        ,'zmt_amount': zmt_amt
+        ,'transactionhash': transactionhash
+        ,'blocknumber': blocknumber
+        ,'logindex': logindex
+        ,'transactionindex': transactionindex
+                    }
+
+    for lg in data:
+        created_a = datetime.utcfromtimestamp(int(lg["timeStamp"], 16))
+        # time= datetime.fromtimestamp(lg['timeStamp'])
+        zmt_k_a = lg["address"]
+        topi = lg["topics"][0]
+        l1 = len(lg["topics"][0])
+
+        if lg["topics"][0] == '0xa78a9be3a7b862d26933ad85fb11d80ef66b8f972d7cbba06621d583943a4098': #for burn
+            from_add = lg["topics"][1]
+            to_add = lg["topics"][2]
+        elif lg["topics"][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef': #for transaction
+            from_add = lg["topics"][1]
+            to_add = lg["topics"][2]
+        elif lg["topics"][0] == '0x4599e9bf0d45c505e011d0e11f473510f083a4fdc45e3f795d58bb5379dbad68': #for mint >>assume. do not know for real
+            from_add = lg["topics"][1]
+            to_add = '099999999999999noaddress'
+        else:
+            from_add = '09999999999999999999999999999999999999999999999999999999996699999f'
+            to_add = '09999999999999999999999999999999999999999999999999999999996699999f'
+
+        if lg["topics"][0] == '0xa78a9be3a7b862d26933ad85fb11d80ef66b8f972d7cbba06621d583943a4098':
+            zmt_a = int(lg["data"],16) #literal_eval(lg["data"]) / (10**320)
+        elif lg["topics"][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+            zmt_a = literal_eval(lg["data"]) / (10 ** 18)
+        elif lg["topics"][0] == '0x4599e9bf0d45c505e011d0e11f473510f083a4fdc45e3f795d58bb5379dbad68':
+            zmt_a = literal_eval(lg["data"]) / (10 ** 320)
+        else:
+            zmt_a = 0
+        if lg["data"] == '0x':
+            zmt_a = 0.000000000000000001
+        elif literal_eval(lg["data"]) > 200000000000000000000000000:
+            zmt_a = 0.000000000000000001
+        else:
+            zmt_a = literal_eval(lg["data"]) / ETHER_VALUE
+
+        transactionh = lg["transactionHash"]
+        blockn = lg["blockNumber"]
+        logind = lg["logIndex"]
+        transactionind = lg["transactionIndex"]
+
+        created_at.append(created_a)
+        zmt_k_address.append(zmt_k_a)
+        topic.append(topi)
+        length.append(l1)
+        from_address.append(from_add)
+        to_address.append(to_add)
+        zmt_amt.append(zmt_a)
+        transactionhash.append(transactionh)
+        blocknumber.append(blockn)
+        logindex.append(logind)
+        transactionindex.append(transactionind)
+
+    y = json.dumps(get_log_dict, indent=4, sort_keys=False, default=str)
+
+    return y
+
+
+def get_bscscan_api_logs(**kwargs):
+    def latest_block():
+        postgres = PostgresHook(postgres_conn_id=PG_CONN_ID)
+        conn = postgres.get_conn()
+        cur = conn.cursor()
+        cur.execute('select '
+                    'max("blocknumber"::dec(65,0))'
+                    'from warehouse.data_team_staging.zmt_bscscan')
+        max_block = cur.fetchone()[0]
+
+        return max_block
+
+    max_block = latest_block()
+    api_data = get_logs(max_block, INIT_FACTOR)
+
+    while (len(json.loads(api_data)['created_at']) > DATA_LIMIT):
+            factor = math.floor(INIT_FACTOR * 0.5)
+            print ('block incremental reduced from= ' + str(INIT_FACTOR), 'to= ' + str(factor))
+            api_data = get_logs(max_block, factor)
+            print('new data length= ' +str(len(json.loads(get_logs(factor))['created_at'])))
+
+    logs_df = pd.read_json(api_data)
+
+    print('---individual column formatting in pandas-------------')
+    logs_df['length_from_address'] = logs_df['from_address'].str.len()
+    logs_df['length_to_address'] = logs_df['to_address'].str.len()
+    logs_df['from_address_use'] = '0x' + logs_df['from_address'].str[-40:].astype(str)
+    logs_df['to_address_use'] = '0x' + logs_df['to_address'].str[-40:].astype(str)
+    logs_df['blocknumber'] = logs_df['blocknumber'].apply(int, base=16)
+    logs_df.drop(['length'], inplace=True, axis=1)
+    append_data(logs_df)
+
+  
+    
+get_api_logs = PythonOperator(
+   task_id=f"get_bscscan_api_logs",
+   provide_context = True,
+   python_callable=get_bscscan_api_logs,
+   dag=dag
+)
+
+
+dedup_api_logs = PostgresOperator(
+   task_id="dedup_api_logs",
+   postgres_conn_id=PG_CONN_ID,
+   sql=f"drop table if exists tmp_bs_api_logs; create temp table tmp_bs_api_logs AS select distinct * from {PG_SCHEMA}.{PG_TABLE_NAME}; TRUNCATE TABLE {PG_SCHEMA}.{PG_TABLE_NAME}; INSERT into {PG_SCHEMA}.{PG_TABLE_NAME} select * from tmp_bs_api_logs;",
+   dag=dag
+)
+
+
+start >> get_api_logs >> dedup_api_logs >> finish
