@@ -1,0 +1,200 @@
+--CONTRIBUTION
+{'0': [
+	{'entities': [
+			{'name': 'Binance', 'category': 'Exchange', 'actor_id': 3153, 'is_primary_entity': True, 'is_vasp': True}
+			, {'name': 'Binance', 'category': 'Exchange', 'actor_id': 3153, 'is_primary_entity': False, 'is_vasp': True}
+				, {'name': 'ObmenCrypto', 'category': 'Coin Swap Service', 'actor_id': 23732, 'is_primary_entity': False, 'is_vasp': True}
+			]
+	, 'contribution_percentage': 100
+	, 'contribution_value': {'native': 77526752, 'native_major': 0.77526752, 'usd': 13112.494952}
+	}
+]
+
+, '1': [{'entities': [{'name': 'Bitkub', 'category': 'Exchange', 'actor_id': 19988, 'is_primary_entity': True, 'is_vasp': True}]
+, 'contribution_percentage': 100, 'contribution_value': {'native': 52908479, 'native_major': 0.52908479, 'usd': 8829.269095}}
+]
+}
+
+, '2': [{'entities': [{'name': 'Unknown', 'category': 'Unknown', 'actor_id': -4, 'is_primary_entity': True, 'is_vasp': None}], 'contribution_percentage': 100, 'contribution_value': {'native': 39952495, 'native_major': 0.39952495, 'usd': 7111.795811}}]}
+
+
+
+--EVALUATION DETAILS---SHORT--------
+[{'rule_id': '490f72b3-4136-49b4-982e-a0a777f20ab9'
+, 'risk_score': 10
+, 'matched_elements': [
+	{'contributions': [
+		{'risk_triggers': {'country': ['KY']}
+		, 'contribution_percentage': 100
+		, 'entity': 'Binance'
+		, 'contribution_value': {'native': 2180820476, 'native_major': 21.80820476, 'usd': 452034.252927}
+		}
+		]
+, 'category': 'Exchange'
+, 'contribution_percentage': 100
+, 'contribution_value': {'native': 2180820476, 'native_major': 21.80820476, 'usd': 452034.252927}}]
+, 'rule_name': 'High Risk Countries'
+, 'rule_history_id': 'd53467f6-6fe0-4b01-af1e-0c71301e083f'}
+]
+
+--EVALUATION DETAILS---LONG--------
+[{'rule_id': '8dac09f0-a59a-4a78-8657-c5a6f3ea2d81'
+, 'risk_score': 0.01760966928217759
+, 'matched_elements': [
+	{'contributions': [
+		{'risk_triggers': {'category_id': '9ae49a14-30d4-4471-bbe8-35913733d53c', 'category': 'Gambling'}
+		, 'contribution_percentage': 0.07966629291461086
+		, 'entity': 'Stake Casino'
+		, 'contribution_value': {'native': 1480.7661496960927, 'native_major': 1.4807661496960927e-05, 'usd': 0.2635857035688048}
+		}
+
+		, {'risk_triggers': {'category_id': '9ae49a14-30d4-4471-bbe8-35913733d53c', 'category': 'Gambling'}
+		, 'contribution_percentage': 0.02749785703684787
+		, 'entity': 'SatoshiMines'
+		, 'contribution_value': {'native': 511.1056935081654, 'native_major': 5.111056935081654e-06, 'usd': 0.09098003344351246}
+		}
+
+		, {'risk_triggers': {'category_id': '9ae49a14-30d4-4471-bbe8-35913733d53c', 'category': 'Gambling'}
+		, 'contribution_percentage': 0.021145563182177727
+		, 'entity': 'Yolo Group'
+		, 'contribution_value': {'native': 393.0349088790874, 'native_major': 3.930349088790874e-06, 'usd': 0.06996268992592619}
+		}
+		]
+
+	, 'category': 'Gambling', 'contribution_percentage': 0.12830971313363645
+	, 'contribution_value': {'native': 2384.9067520833455, 'native_major': 2.3849067520833456e-05, 'usd': 0.42452842693824344}
+	}
+
+	, {'contributions': [
+		{
+		'risk_triggers': {'category_id': 'ff85b715-884e-48dd-8f7a-db192f8d703e', 'category': 'Coin Swap Service'}
+		, 'contribution_percentage': 0.047786979688139455
+		, 'entity': 'Top-Exchange'
+		, 'contribution_value': {'native': 888.2218480312138, 'native_major': 8.882218480312137e-06, 'usd': 0.15810908480487754}
+		}
+		]
+	, 'category': 'Coin Swap Service'
+	, 'contribution_percentage': 0.047786979688139455
+	, 'contribution_value': {'native': 888.2218480312138, 'native_major': 8.882218480312137e-06, 'usd': 0.15810908480487754}
+	}
+	]
+, 'rule_name': 'Obfuscating & Misc.'
+, 'rule_history_id': '0f008e5c-62ab-4cbd-b974-ece1549d6348'
+}
+
+, {'rule_id': '490f72b3-4136-49b4-982e-a0a777f20ab9'
+, 'risk_score': 0
+, 'matched_elements': [
+	{'contributions': [
+		{'risk_triggers': {'country': ['KY']}
+		, 'contribution_percentage': 5.85256214466977
+		, 'entity': 'Binance'
+		, 'contribution_value': {'native': 108782.21636481292, 'native_major': 0.0010878221636481293, 'usd': 19.363919847963842}}
+
+		, {'risk_triggers': {'country': ['UG']}
+		, 'contribution_percentage': 0.3419481187778414
+		, 'entity': 'Luno (Previously BitX)'
+		, 'contribution_value': {'native': 6355.827298016804, 'native_major': 6.355827298016804e-05, 'usd': 1.1313773011717}}
+
+		, {'risk_triggers': {'country': ['GI']}
+		, 'contribution_percentage': 0.25677330933890763
+		, 'entity': 'Xapo', 'contribution_value': {'native': 4772.673745746303, 'native_major': 4.772673745746303e-05, 'usd': 0.8495659948973655}}
+		
+		, {'risk_triggers': {'country': ['PH']}
+		, 'contribution_percentage': 0.037277906054045594
+		, 'entity': 'coins.ph'
+		, 'contribution_value': {'native': 692.8885403962115, 'native_major': 6.928885403962115e-06, 'usd': 0.12333852543332456}}
+
+		, {'risk_triggers': {'country': ['KY']}
+		, 'contribution_percentage': 0.023281469514343435
+		, 'entity': 'Tidex'
+		, 'contribution_value': {'native': 432.735234824748, 'native_major': 4.32735234824748e-06, 'usd': 0.07702959805888528}}
+
+		, {'risk_triggers': {'country': ['TR']}
+		, 'contribution_percentage': 0.019403842876915815
+		, 'entity': 'Huobi'
+		, 'contribution_value': {'native': 360.66136197595074, 'native_major': 3.6066136197595076e-06, 'usd': 0.06419999462172012}}
+		]
+, 'category': 'Exchange', 'contribution_percentage': 6.5312467912318235, 'contribution_value': {'native': 121397.00254577294, 'native_major': 0.0012139700254577297, 'usd': 21.60943126214684}}
+, {'contributions': [{'risk_triggers': {'name': 'CoinExchange', 'label_id': '26ef045e-3afc-4026-9349-708c6e99e772'}, 'contribution_percentage': 0.1789680520138388, 'entity': 'CoinExchange'
+, 'contribution_value': {'native': 3326.4988692669435, 'native_major': 3.3264988692669434e-05, 'usd': 0.5921377558884068}}], 'category': 'Crypto-Exchange', 'contribution_percentage': 0.1789680520138388
+, 'contribution_value': {'native': 3326.4988692669435, 'native_major': 3.3264988692669434e-05, 'usd': 0.5921377558884068}}]
+, 'rule_name': 'High Risk Countries', 'rule_history_id': 'd53467f6-6fe0-4b01-af1e-0c71301e083f'
+}
+
+, {'rule_id': '2bbfd0aa-df7c-4842-bda5-270180d1c8d2', 'risk_score': 0.10170121195604197
+	, 'matched_elements': [{'contributions': [{'risk_triggers': {'category_id': '9a587a8f-1b26-4f09-b7b4-fdecee2d678b', 'category': 'Ponzi Scheme'}
+	, 'contribution_percentage': 1.0056583500137024, 'entity': 'Bitconnect', 'contribution_value': {'native': 18692.282374123188, 'native_major': 0.00018692282374123187, 'usd': 3.327344025186714}}]
+	, 'category': 'Ponzi Scheme', 'contribution_percentage': 1.0056583500137024, 'contribution_value': {'native': 18692.282374123188, 'native_major': 0.00018692282374123187, 'usd': 3.327344025186714}}
+	, {'contributions': [{'risk_triggers': {'category_id': 'ce5ff675-75b9-4876-bced-27248eb96ec4', 'category': 'Scam'}, 'contribution_percentage': 0.01135376954671719, 'entity': 'Trust-Trading Scam (internationalglobalpay.com)'
+	, 'contribution_value': {'native': 211.03376347948256, 'native_major': 2.1103376347948255e-06, 'usd': 0.03756533942576182}}], 'category': 'Scam', 'contribution_percentage': 0.01135376954671719
+	, 'contribution_value': {'native': 211.03376347948256, 'native_major': 2.1103376347948255e-06, 'usd': 0.03756533942576182}}], 'rule_name': 'Illicit Activity', 'rule_history_id': '2bbfd0aa-df7c-4842-bda5-270180d1c8d2'}
+
+, {'rule_id': '8a846041-7cad-42c5-9a30-2a02b4101328', 'risk_score': 0.048655853931892805, 'matched_elements': [{'contributions': [{'risk_triggers': {'category_id': 'cae6b6bb-209e-4f50-81e2-31868c47ee3d', 'category': 'Investment Syndicate'}
+	, 'contribution_percentage': 1.1141134113038802, 'entity': 'HextraCoin', 'contribution_value': {'native': 20708.148528380465, 'native_major': 0.00020708148528380467, 'usd': 3.686180900732187}}], 'category': 'Investment Syndicate', 'contribution_percentage': 1.1141134113038802
+	, 'contribution_value': {'native': 20708.148528380465, 'native_major': 0.00020708148528380467, 'usd': 3.686180900732187}}
+	, {'contributions': [{'risk_triggers': {'category_id': 'e4df5353-6f13-4bde-80dd-9c8bcf31a1e0', 'category': 'Token Sale'}
+	, 'contribution_percentage': 0.1022829369934399, 'entity': 'DavorCoin', 'contribution_value': {'native': 1901.1442010201367, 'native_major': 1.9011442010201367e-05, 'usd': 0.3384156451135063}}]
+	, 'category': 'Token Sale', 'contribution_percentage': 0.1022829369934399, 'contribution_value': {'native': 1901.1442010201367, 'native_major': 1.9011442010201367e-05, 'usd': 0.3384156451135063}}], 'rule_name': 'Crypto Ecosystem Medium Risk', 'rule_history_id': '8a846041-7cad-42c5-9a30-2a02b4101328'}]
+
+
+-----FULL set of sample data-----
+[{'id': '412e920d-567a-40d3-beb5-ea8d526e1c42'
+, 'created_at': '2023-02-15T06:42:17.871Z'
+, 'risk_score': 10, 'analysed_at': '2023-02-20T02:34:36.904Z'
+, 'analysed_by': {'id': '894c7af7-3b0d-4da4-96b4-a4bbb68f0304', 'type': 'api_key'}
+, 'updated_at': '2023-02-20T02:34:36.760Z'
+, 'evaluation_detail': [
+	{'rule_id': '490f72b3-4136-49b4-982e-a0a777f20ab9'
+	, 'risk_score': 10
+	, 'matched_elements': [
+		{'contributions': [{'risk_triggers': {'country': ['KY']}
+		, 'contribution_percentage': 100, 'entity': 'Binance'
+		, 'contribution_value': {'native': 77526752, 'native_major': 0.77526752, 'usd': 13112.494952}
+		}]
+		, 'category': 'Exchange'
+		, 'contribution_percentage': 100
+		, 'contribution_value': {'native': 77526752, 'native_major': 0.77526752, 'usd': 13112.494952}
+		}
+	]
+	, 'rule_name': 'High Risk Countries'
+	, 'rule_history_id': 'd53467f6-6fe0-4b01-af1e-0c71301e083f'}
+]
+, 'error': None
+, 'subject': {'blockchain': 'bitcoin', 'asset': 'BTC', 'protocol': 'BTC'
+		, 'hash': '60cc4ed80852860ffe2464a23de0a8431073b279ccabb56030eee904f28a99c6'
+		, 'output_address': 'bc1qrx6x7jmxewsl56efg3dhawucv8qelu4gv945q9', 'output_type': 'address', 'type': 'transaction'}
+, 'team_id': '989a5498-5283-43ff-8e64-6d0d1ba3409a'
+, 'blockchain_info': {'token': {'name': 'BTC'}, 'address': {'has_sent': True, 'has_received': True}
+	, 'transaction': {'time': '2022-12-05T07:36:08Z', 'inputs': [{'index': 0, 'labels': [{'name': 'Unknown', 'primary': True, 'category': 'Unknown'}]
+	, 'hash': 'bc1qyfm68fr4h476detx7zstl87dsqs2gn0nkm3gv6', 'amount': {'native': 1025262932, 'native_major': 10.25262932, 'usd': 173407.94853}}]
+	, 'outputs': [{'index': 0, 'labels': [{'name': 'Binance', 'primary': True, 'category': 'Exchange'}
+	, {'name': 'Binance', 'primary': False, 'category': 'Exchange'}
+	, {'name': 'ObmenCrypto', 'primary': False, 'category': 'Coin Swap Service'}
+	, {'name': 'ObmenCrypto', 'primary': False, 'category': 'Coin Swap Service'}]
+	, 'hash': 'bc1qrx6x7jmxewsl56efg3dhawucv8qelu4gv945q9'
+	, 'amount': {'native': 77526752, 'native_major': 0.77526752, 'usd': 13112.494952}}
+	, {'index': 1, 'labels': [{'name': 'Unknown', 'primary': True, 'category': 'Unknown'}]
+	, 'hash': 'bc1qyfm68fr4h476detx7zstl87dsqs2gn0nkm3gv6'
+	, 'amount': {'native': 947734118, 'native_major': 9.47734118, 'usd': 160295.104821}}]
+	, 'value': {'native': '77526752', 'native_major': '0.77526752', 'usd': 13112.494952}}
+ 	'value': '77526752'}
+, 'customer': {'id': '8badb473-c914-47f4-9161-3ca5b1107b5e', 'reference': '46641'}
+, 'type': 'destination_of_funds'
+, 'workflow_status': 'active'
+, 'predictive': False
+, 'changes': {'risk_score_change': 0}
+, 'contributions': [{'entities': [{'name': 'Binance', 'category': 'Exchange', 'actor_id': 3153
+			, 'is_primary_entity': True, 'is_vasp': True}
+	, {'name': 'Binance'
+		, 'category': 'Exchange'
+		, 'actor_id': 3153
+		, 'is_primary_entity': False
+		, 'is_vasp': True}
+	, {'name': 'ObmenCrypto', 'category': 'Coin Swap Service', 'actor_id': 23732, 'is_primary_entity': False, 'is_vasp': True}]
+	, 'contribution_percentage': 100
+	, 'contribution_value': {'native': 77526752, 'native_major': 0.77526752, 'usd': 13112.494952}}
+	]
+, 'analysis_meta': None, 'comments': [{'body': None}]
+, 'process_status': 'complete'}
+]
